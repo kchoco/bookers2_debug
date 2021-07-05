@@ -1,4 +1,5 @@
 class User < ApplicationRecord
+ validates :introduction, presence: true, length: { maximum: 50 }
 
 
   # Include default devise modules. Others available are:
@@ -9,9 +10,33 @@ class User < ApplicationRecord
   has_many :books
   has_many :favorites, dependent: :destroy
   has_many :book_comments, dependent: :destroy
+  # フォローしている
+  has_many :follower, class_name: "Relationship", foreign_key: "follower_id", dependent: :destroy
+  # フォローされてる
+  has_many :followed, class_name: "Relationship", foreign_key: "followed_id", dependent: :destroy
+
+  #フォローしている人
+  has_many :follower_user, through: :followed, source: :follower
+  #フォローされている人
+  has_many :following_user, through: :follower, source: :followed
+
+     # 1. followメソッド　＝　フォローする
+  def follow(user_id)
+   follower.create(followed_id: user_id)
+  end
+
+  # 2. unfollowメソッド　＝　フォローを外す
+  def unfollow(user_id)
+   follower.find_by(followed_id: user_id).destroy
+  end
+
+  # 3. followingメソッド　＝　既にフォローしているかの確認
+  def following?(user)
+   following_user.include?(user)
+  end
 
   attachment :profile_image, destroy: false
 
   validates :name, length: {maximum: 20, minimum: 2}, uniqueness: true
-  validates :introduction, presence: true, length: { maximum: 50 }
+
 end
